@@ -77,7 +77,4 @@ class Empleado(Usuario):
 
 
 
-
-
-
         

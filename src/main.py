@@ -1,7 +1,6 @@
 import sys
 import os
 
-# Configurar rutas para que Python reconozca 'dominio' y 'persistencia'
 directorio_src = os.path.dirname(os.path.abspath(__file__))
 if directorio_src not in sys.path:
     sys.path.insert(0, directorio_src)
@@ -15,10 +14,9 @@ from dominio.usuario import Usuario
 from persistencia.empleado_dao import EmpleadoDAO
 
 def probar_demostrasion():
-    # 1. Crear las tablas en MySQL si no existen
+    
     crear_tablas()
-
-    # 2. Instanciar empleado (usa los atributos que definió tu compañero)
+    
     empleado = Empleado(
         nombre="Ana Pérez",
         correo="ana@ecotech.cl",
@@ -30,13 +28,13 @@ def probar_demostrasion():
         cargo="Analista QA"
     )
 
-    # 3. Paso 5 de la clase: Mostrar ID antes de guardar (debe ser None)
+    # Mostrar ID antes de guardar (debe ser None)
     print("Antes:", empleado.id)
 
-    # 4. Guardar en la base de datos a través del DAO
+    # Guardar en la base de datos a través del DAO
     EmpleadoDAO.insertar(empleado)
 
-    # 5. Paso 5 de la clase: Mostrar ID asignado por la BD
+    # Mostrar ID asignado por la BD
     print("Después:", empleado.id)
 
 if __name__ == "__main__":
