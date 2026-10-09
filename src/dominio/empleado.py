@@ -1,37 +1,26 @@
-from dominio.usuario import Usuario
 from dominio.registroTiempo import RegistroTiempo
 from dominio.proyecto import Proyecto
-
-class Empleado(Usuario):
-    def __init__(
-        self, 
-        nombre: str, 
-        correo: str = "", 
-        direccion: str = "", 
-        numeracion: int = 0, 
-        numero: int = 0, 
-        salario: float = 0.0, 
-        inicioContrato: str = "", 
-        cargo: str = "Desarrollador", 
-        contraseña: str = "12345678", 
-        rol: str = "Empleado", 
-        id: int = None
-    ):
-        # Pasar correo y atributos a Usuario
-        super().__init__(nombre=nombre, contraseña=contraseña, rol=rol, correo=correo, id=id)
-        
-        self.direccion = direccion
-        self.numeracion = numeracion
-        self.numero = numero
-        self.salario = salario
+ 
+class Empleado:
+    def __init__(self, nombre: str, direccion: str, telefono: int, correo: str, salario: int, inicioContrato: str,  id = None):
+        self.id = id,
+        self.nombre = nombre,
+        self.direccion = direccion,
+        self.telefono = telefono,
+        self.correo = correo,
+        self.salario = salario,
         self.inicioContrato = inicioContrato
-        self.cargo = cargo
-        
-        self._registro_tiempo: list[RegistroTiempo] = []
+        self._registro_tiempo:list[RegistroTiempo] = []
         self._proyectos: list[Proyecto] = []
         self._departamentos: list = []
 
-    def registrar_tiempo(self, rg: RegistroTiempo) -> bool:
+    def mostrar_datos(self) -> str:
+        print(f"\nId {self.id}, Nombre {self.nombre}, Correo {self.correo}")
+
+    def actualizar_nombre(self, nombre):
+         self.nombre = nombre
+
+    def registrar_tiempo(self, rg:RegistroTiempo) -> bool:
         if rg in self._registro_tiempo:
             return False
         self._registro_tiempo.append(rg)
@@ -57,13 +46,14 @@ class Empleado(Usuario):
 
     def eliminar_proyecto(self, proyecto: Proyecto) -> bool:
         if proyecto not in self._proyectos:
+
             return False
         proyecto.eliminar_empleado(self)
         self._proyectos.remove(proyecto)
         return True
 
     def crear_departamento(self, nombre: str, gerente_asociado: str):
-        from dominio.departamento import Departamento 
+        from dominio.departamento import Departamento  
         departamento = Departamento(nombre, gerente_asociado)
         departamento.agregar_empleado(self)
         self._departamentos.append(departamento)

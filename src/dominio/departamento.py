@@ -1,9 +1,10 @@
 from dominio.empleado import Empleado
 
 class Departamento:
-    def __init__(self, nombre: str, gerenteAsociado: str):
+    def __init__(self, nombre: str, id_gerente: int, id = None):
+        self.id = id
         self.nombre = nombre
-        self.gerenteAsociado = gerenteAsociado
+        self.id_gerente = id_gerente
         self._empleados:list[Empleado] = []
 
     def agregar_empleado(self, empleado:Empleado) -> bool:

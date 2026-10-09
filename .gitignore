@@ -1,6 +1,5 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
 *.py[codz]
 *$py.class
 
@@ -149,7 +148,6 @@ activemq-data/
 *.sage.py
 
 # Environments
-.env.local
 .envrc
 .venv
 env/
