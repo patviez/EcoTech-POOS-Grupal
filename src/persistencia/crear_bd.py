@@ -23,6 +23,29 @@ def crear_tablas():
                 inicioContrato TEXT NOT NULL,
                 FOREIGN KEY (id_departamento) REFERENCES departamento(id)
             )""",
+            """CREATE TABLE IF NOT EXISTS registroTiempo (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_empleado INTEGER,
+                fecha TEXT NOT NULL,
+                horasTrabajadas INTEGER NOT NULL,
+                FOREIGN KEY (id_empleado) REFERENCES empleado(id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS proyecto (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_registroTiempo INTEGER,
+                nombre TEXT NOT NULL,
+                descripcion TEXT NOT NULL,
+                fechaInicio TEXT NOT NULL,
+                FOREIGN KEY (id_registroTiempo) REFERENCES registroTiempo(id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS usuario (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_empleado INTEGER,
+                nombre TEXT NOT NULL,
+                contraseña TEXT NOT NULL,
+                rol TEXT NOT NULL,
+                FOREIGN KEY (id_empleado) REFERENCES empleado(id)
+            )""",
         ]
     else:
         sentencias = [

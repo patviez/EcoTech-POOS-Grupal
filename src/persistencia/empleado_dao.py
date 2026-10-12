@@ -2,7 +2,7 @@ from dominio.empleado import Empleado
 from persistencia.conexion import abrir_conexion, marcador_sql
  
 # Orden de columnas usado en todos los SELECT
-COLUMNAS = "id, nombre, direccion, numeracion, telefono, correo, salario, inicioContrato"
+COLUMNAS = "id, nombre, direccion, numeracion, telefono, correo, salario, inicioContrato, id_departamento"
  
  
 def _fila_a_empleado(fila):
@@ -16,6 +16,7 @@ def _fila_a_empleado(fila):
         correo=fila[5],
         salario=fila[6],
         inicioContrato=fila[7],
+        id_departamento=fila[8],
     )
  
  
@@ -35,16 +36,18 @@ class EmpleadoDAO:
             marca = marcador_sql()
             sql = f"""
                 INSERT INTO empleado
-                    (nombre, direccion, telefono, correo, salario, inicioContrato)
-                VALUES ({marca}, {marca}, {marca}, {marca}, {marca}, {marca})
+                    (nombre, direccion, numeracion, telefono, correo, salario, inicioContrato, id_departamento)
+                VALUES ({marca}, {marca}, {marca}, {marca}, {marca}, {marca}, {marca}, {marca})
             """
             cursor.execute(sql, (
                 empleado.nombre,
                 empleado.direccion,
+                empleado.numeracion,
                 empleado.telefono,
                 empleado.correo,
                 empleado.salario,
                 empleado.inicioContrato,
+                empleado.id_departamento,
             ))
             empleado.id = cursor.lastrowid
             conexion.commit()
@@ -67,18 +70,20 @@ class EmpleadoDAO:
             marca = marcador_sql()
             sql = (
                 "UPDATE empleado "
-                f"SET nombre = {marca}, direccion = {marca}, "
+                f"SET nombre = {marca}, direccion = {marca}, numeracion = {marca}, "
                 f"telefono = {marca}, correo = {marca}, salario = {marca}, "
-                f"inicioContrato = {marca} "
+                f"inicioContrato = {marca}, id_departamento = {marca} "
                 f"WHERE id = {marca}"
             )
             cursor.execute(sql, (
                 empleado.nombre,
                 empleado.direccion,
+                empleado.numeracion,
                 empleado.telefono,
                 empleado.correo,
                 empleado.salario,
                 empleado.inicioContrato,
+                empleado.id_departamento,
                 empleado.id,
             ))
             conexion.commit()
@@ -153,37 +158,23 @@ class EmpleadoDAO:
  
     @staticmethod
     def buscar_por_nombre(nombre):
-        """Búsqueda parcial: 'ana' encuentra 'Ana', 'Mariana', etc."""
+        """Busca por palabras completas sin distinguir mayúsculas:
+        'ana' encuentra 'Ana Pérez', pero no 'Mariana'."""
         conexion = None
         try:
             conexion = abrir_conexion()
             cursor = conexion.cursor()
-            marca = marcador_sql()
-            sql = f"SELECT {COLUMNAS} FROM empleado WHERE nombre LIKE {marca} ORDER BY nombre"
-            # El comodín va en el parámetro, nunca concatenado en el SQL
-            cursor.execute(sql, (f"%{nombre}%",))
+            cursor.execute(f"SELECT {COLUMNAS} FROM empleado ORDER BY id")
             filas = cursor.fetchall()
-            return [_fila_a_empleado(f) for f in filas]
+            # Se compara en Python porque LOWER() de SQLite no convierte letras con tilde
+            buscadas = nombre.casefold().split()
+            return [
+                _fila_a_empleado(f) for f in filas
+                if all(palabra in f[1].casefold().split() for palabra in buscadas)
+            ]
         except Exception as e:
             print(f"Error al buscar empleados por nombre: {e}")
             return []
-        finally:
-            if conexion is not None:
-                conexion.close()
- 
-    @staticmethod
-    def existe_correo(correo):
-        conexion = None
-        try:
-            conexion = abrir_conexion()
-            cursor = conexion.cursor()
-            marca = marcador_sql()
-            sql = f"SELECT 1 FROM empleado WHERE correo = {marca}"
-            cursor.execute(sql, (correo,))
-            return cursor.fetchone() is not None
-        except Exception as e:
-            print(f"Error al verificar el correo: {e}")
-            return False
         finally:
             if conexion is not None:
                 conexion.close()
@@ -206,18 +197,24 @@ class EmpleadoDAO:
         finally:
             if conexion is not None:
                 conexion.close()
- 
+
     @staticmethod
-    def contar():
+    def asignar_departamento(id_empleado, id_departamento):
+        """Cambia el departamento del empleado. Con None lo deja sin departamento."""
         conexion = None
         try:
             conexion = abrir_conexion()
             cursor = conexion.cursor()
-            cursor.execute("SELECT COUNT(*) FROM empleado")
-            return cursor.fetchone()[0]
+            marca = marcador_sql()
+            sql = f"UPDATE empleado SET id_departamento = {marca} WHERE id = {marca}"
+            cursor.execute(sql, (id_departamento, id_empleado))
+            conexion.commit()
+            return cursor.rowcount > 0
         except Exception as e:
-            print(f"Error al contar los empleados: {e}")
-            return 0
+            print(f"Error al asignar el departamento al empleado: {e}")
+            if conexion is not None:
+                conexion.rollback()
+            return False
         finally:
             if conexion is not None:
                 conexion.close()

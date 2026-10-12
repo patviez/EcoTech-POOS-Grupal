@@ -2,23 +2,25 @@ from dominio.registroTiempo import RegistroTiempo
 from dominio.proyecto import Proyecto
  
 class Empleado:
-    def __init__(self, nombre: str, direccion: str, telefono: int, correo: str, salario: int, inicioContrato: str,  id = None):
-        self.id = id,
-        self.nombre = nombre,
-        self.direccion = direccion,
-        self.telefono = telefono,
-        self.correo = correo,
-        self.salario = salario,
+    def __init__(self, nombre: str, direccion: str, numeracion: int, telefono: int, correo: str, salario: int, inicioContrato: str, id_departamento: int = None, id = None):
+        self.id = id
+        self.id_departamento = id_departamento
+        self.nombre = nombre
+        self.direccion = direccion
+        self.numeracion = numeracion
+        self.telefono = telefono
+        self.correo = correo
+        self.salario = salario
         self.inicioContrato = inicioContrato
         self._registro_tiempo:list[RegistroTiempo] = []
         self._proyectos: list[Proyecto] = []
         self._departamentos: list = []
 
     def mostrar_datos(self) -> str:
-        print(f"\nId {self.id}, Nombre {self.nombre}, Correo {self.correo}")
+        return f"\nId {self.id}, Nombre {self.nombre}, Correo {self.correo}"
 
     def actualizar_nombre(self, nombre):
-         self.nombre = nombre
+        self.nombre = nombre
 
     def registrar_tiempo(self, rg:RegistroTiempo) -> bool:
         if rg in self._registro_tiempo:
@@ -28,7 +30,9 @@ class Empleado:
 
     def agregar_descripcion(self) -> str:
         return (f"Empleado {self.nombre} (ID {self.id}) - {self.correo}\n"
-                f"Dirección: {self.direccion} | Salario: {self.salario}")
+                f"Dirección: {self.direccion} {self.numeracion} | Teléfono: {self.telefono}\n"
+                f"Salario: {self.salario} | Inicio contrato: {self.inicioContrato} | "
+                f"Departamento: {self.id_departamento if self.id_departamento is not None else 'Sin departamento'}")
 
     def crear_proyecto(self, nombre: str, descripcion: str, fecha_inicio: str) -> Proyecto:
         proyecto = Proyecto(nombre, descripcion, fecha_inicio)
@@ -46,7 +50,6 @@ class Empleado:
 
     def eliminar_proyecto(self, proyecto: Proyecto) -> bool:
         if proyecto not in self._proyectos:
-
             return False
         proyecto.eliminar_empleado(self)
         self._proyectos.remove(proyecto)
@@ -64,7 +67,3 @@ class Empleado:
             return False
         self._departamentos.remove(departamento)
         return True
-
-
-
-        
