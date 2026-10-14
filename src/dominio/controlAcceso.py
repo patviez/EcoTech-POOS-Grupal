@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import os
  
  
@@ -17,8 +18,11 @@ class ControlAcceso:
         if not usuario.contraseña or ":" not in usuario.contraseña:
             return False
         salt_hex, hash_hex = usuario.contraseña.split(":", 1)
-        salt = bytes.fromhex(salt_hex)
-        hash_esperado = bytes.fromhex(hash_hex)
+        try:
+            salt = bytes.fromhex(salt_hex)
+            hash_esperado = bytes.fromhex(hash_hex)
+        except ValueError:
+            return False
         hash_intento = hashlib.pbkdf2_hmac('sha256', contraseña_ingresada.encode('utf-8'),
                                             salt, ControlAcceso._ITERACIONES)
-        return hash_intento == hash_esperado
+        return hmac.compare_digest(hash_intento, hash_esperado)

@@ -1,5 +1,6 @@
 class Proyecto :
-    def __init__(self, nombre: str, descripcion: str, fechaInicio: str):
+    def __init__(self, nombre: str, descripcion: str, fechaInicio: str, id = None):
+        self.id = id
         self.nombre = nombre
         self.descripcion = descripcion
         self.fechaInicio = fechaInicio

@@ -1,71 +1,57 @@
 from dominio.registroTiempo import RegistroTiempo
-from persistencia.conexion import abrir_conexion, marcador_sql
+from persistencia.base_dao import BaseDAO
 
-class RegistroTiempoDAO:
+
+class RegistroTiempoDAO(BaseDAO):
+    TABLA = "registroTiempo"
+    COLUMNAS = "id, id_empleado, id_proyecto, fecha, horasTrabajadas"
+    NOMBRE = "el registro de tiempo"
 
     @staticmethod
-    def _fila_a_registro(fila):
-        if fila is None:
+    def _convertir(fila):
+        return RegistroTiempo(
+            id=fila[0],
+            id_empleado=fila[1],
+            id_proyecto=fila[2],
+            fecha=fila[3],
+            horas=fila[4],
+        )
+
+    @classmethod
+    def insertar(cls, registro):
+        sql = (
+            "INSERT INTO registroTiempo (id_empleado, id_proyecto, fecha, horasTrabajadas) "
+            "VALUES (?, ?, ?, ?)"
+        )
+        parametros = (registro.id_empleado, registro.id_proyecto, registro.fecha, registro.horas)
+        nuevo_id = cls._insertar(sql, parametros, "insertar el registro de tiempo")
+        if nuevo_id is None:
             return None
-        # Estructura: id, fecha, horas (y opcionalmente id_empleado / id_proyecto según tu BD)
-        reg = RegistroTiempo(fecha=fila[1], horas=fila[2])
-        reg.id = fila[0]
-        return reg
+        registro.id = nuevo_id
+        return registro
 
-    @staticmethod
-    def insertar(registro: RegistroTiempo):
-        conexion = None
-        try:
-            conexion = abrir_conexion()
-            cursor = conexion.cursor()
-            marca = marcador_sql()
-            sql = f"INSERT INTO registro_tiempo (fecha, horas) VALUES ({marca}, {marca})"
-            cursor.execute(sql, (registro.fecha, registro.horas))
-            registro.id = cursor.lastrowid
-            conexion.commit()
-            return registro
-        except Exception as e:
-            print(f"Error al insertar registro de tiempo: {e}")
-            if conexion is not None:
-                conexion.rollback()
-            return None
-        finally:
-            if conexion is not None:
-                conexion.close()
+    @classmethod
+    def actualizar(cls, registro):
+        sql = (
+            "UPDATE registroTiempo "
+            "SET id_empleado = ?, id_proyecto = ?, fecha = ?, horasTrabajadas = ? "
+            "WHERE id = ?"
+        )
+        parametros = (
+            registro.id_empleado,
+            registro.id_proyecto,
+            registro.fecha,
+            registro.horas,
+            registro.id,
+        )
+        return cls._ejecutar(sql, parametros, "actualizar el registro de tiempo") > 0
 
-    @staticmethod
-    def listar():
-        conexion = None
-        try:
-            conexion = abrir_conexion()
-            cursor = conexion.cursor()
-            sql = "SELECT id, fecha, horas FROM registro_tiempo"
-            cursor.execute(sql)
-            filas = cursor.fetchall()
-            return [RegistroTiempoDAO._fila_a_registro(f) for f in filas]
-        except Exception as e:
-            print(f"Error al listar registros de tiempo: {e}")
-            return []
-        finally:
-            if conexion is not None:
-                conexion.close()
+    @classmethod
+    def listar_por_empleado(cls, id_empleado):
+        return cls._listar_donde("id_empleado = ?", (id_empleado,),
+                                 "listar los registros de tiempo del empleado")
 
-    @staticmethod
-    def eliminar(id_registro: int) -> bool:
-        conexion = None
-        try:
-            conexion = abrir_conexion()
-            cursor = conexion.cursor()
-            marca = marcador_sql()
-            sql = f"DELETE FROM registro_tiempo WHERE id = {marca}"
-            cursor.execute(sql, (id_registro,))
-            conexion.commit()
-            return cursor.rowcount > 0
-        except Exception as e:
-            print(f"Error al eliminar registro de tiempo: {e}")
-            if conexion is not None:
-                conexion.rollback()
-            return False
-        finally:
-            if conexion is not None:
-                conexion.close()
+    @classmethod
+    def listar_por_proyecto(cls, id_proyecto):
+        return cls._listar_donde("id_proyecto = ?", (id_proyecto,),
+                                 "listar los registros de tiempo del proyecto")

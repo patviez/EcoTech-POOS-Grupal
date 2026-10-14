@@ -2,9 +2,19 @@ import re
 from datetime import datetime
 from persistencia.empleado_dao import EmpleadoDAO
 from persistencia.departamento_dao import DepartamentoDAO
+from persistencia.proyecto_dao import ProyectoDAO
+from persistencia.registroTiempo_dao import RegistroTiempoDAO
+from persistencia.usuario_dao import UsuarioDAO
 from dominio.empleado import Empleado
 
-# ===================== Validaciones de entrada =====================
+def a_entero_positivo(valor):
+    try:
+        numero = int(valor)
+    except ValueError:
+        return None
+    if numero >= 1:
+        return numero
+    return None
 
 def pedir_texto(mensaje):
     while True:
@@ -29,7 +39,7 @@ def pedir_entero(mensaje, minimo=1):
 def pedir_telefono(mensaje):
     while True:
         telefono = input(mensaje).strip()
-        if telefono.isdigit() and 8 <= len(telefono) <= 12:
+        if telefono.isdecimal() and 8 <= len(telefono) <= 12:
             return int(telefono)
         print("El teléfono debe tener solo números (entre 8 y 12 dígitos), intente de nuevo.")
 
@@ -50,46 +60,50 @@ def pedir_fecha(mensaje):
             print("La fecha debe tener el formato DD-MM-AAAA (ejemplo: 15-03-2024), intente de nuevo.")
 
 def pedir_departamento(mensaje):
-    """Devuelve el id de un departamento existente, o None si se deja vacío."""
     while True:
         valor = input(mensaje).strip()
         if valor == "":
             return None
-        if not valor.isdigit() or int(valor) < 1:
+        id_departamento = a_entero_positivo(valor)
+        if id_departamento is None:
             print("El id del departamento debe ser un número entero positivo, intente de nuevo.")
             continue
-        if DepartamentoDAO.buscar_por_id(int(valor)) is None:
+        if DepartamentoDAO.buscar_por_id(id_departamento) is None:
             print("No existe un departamento con ese id, intente de nuevo.")
             continue
-        return int(valor)
+        return id_departamento
 
-# ===================== Menú =====================
+def quitar_gerencias(id_empleado, excepto=None):
+    for departamento in DepartamentoDAO.listar_todos():
+        if departamento.id_gerente == id_empleado and departamento.id != excepto:
+            departamento.id_gerente = None
+            DepartamentoDAO.actualizar(departamento)
+            print(f"El departamento '{departamento.nombre}' quedó sin gerente")
 
 def ingresar_datos():
     nombre = pedir_texto("\nNombre: ")
-    direccion = pedir_texto("Dirección: ")
-    numeracion = pedir_entero("Numeración: ")
+    direccion = pedir_texto("Dirección (calle y número): ")
     telefono = pedir_telefono("Teléfono: ")
     correo = pedir_correo("Correo: ")
     salario = pedir_entero("Salario: ")
     inicioContrato = pedir_fecha("Inicio contrato (DD-MM-AAAA): ")
     id_departamento = pedir_departamento("Id del departamento (Enter para dejarlo sin departamento): ")
-    return nombre, direccion, numeracion, telefono, correo, salario, inicioContrato, id_departamento
+    return nombre, direccion, telefono, correo, salario, inicioContrato, id_departamento
 
 def gestionar_empleados():
-    print("1. Registrar empleado")
+    print("\n1. Registrar empleado")
     print("2. Actualizar empleado")
     print("3. Eliminar empleado")
     print("4. Listar empleados")
     print("5. Listar empleados por departamento")
     print("6. Buscar empleado por id")
     print("7. Buscar empleado por nombre")
-    print("8. Salir")
+    print("8. Volver")
 
 def registrar_empleado():
-    nombre, direccion, numeracion, telefono, correo, salario, inicioContrato, id_departamento = ingresar_datos()
+    nombre, direccion, telefono, correo, salario, inicioContrato, id_departamento = ingresar_datos()
 
-    empleado = Empleado(nombre, direccion, numeracion, telefono, correo, salario, inicioContrato, id_departamento)
+    empleado = Empleado(nombre, direccion, telefono, correo, salario, inicioContrato, id_departamento)
     if EmpleadoDAO.insertar(empleado) is not None:
         print(empleado.mostrar_datos())
         print("\nEmpleado registrado correctamente.")
@@ -105,11 +119,12 @@ def actualizar_empleado():
 
     print("\nDatos actuales:")
     print(actual.agregar_descripcion())
-    nombre, direccion, numeracion, telefono, correo, salario, inicioContrato, id_departamento = ingresar_datos()
+    nombre, direccion, telefono, correo, salario, inicioContrato, id_departamento = ingresar_datos()
 
-    empleado = Empleado(nombre, direccion, numeracion, telefono, correo, salario, inicioContrato, id_departamento, idEmpleado)
+    empleado = Empleado(nombre, direccion, telefono, correo, salario, inicioContrato, id_departamento, idEmpleado)
 
     if EmpleadoDAO.actualizar(empleado):
+        quitar_gerencias(empleado.id, excepto=id_departamento)
         print(empleado.mostrar_datos())
         print("\nEmpleado actualizado correctamente")
     else:
@@ -117,9 +132,26 @@ def actualizar_empleado():
 
 def eliminar_empleado():
     idEmpleado = pedir_entero("Ingrese el id del empleado que desea eliminar: ")
-    if EmpleadoDAO.buscar_por_id(idEmpleado) is None:
+    empleado = EmpleadoDAO.buscar_por_id(idEmpleado)
+    if empleado is None:
         print("\nNo existe un empleado con ese id")
         return
+
+    if RegistroTiempoDAO.listar_por_empleado(empleado.id):
+        print("\nNo se puede eliminar un empleado que tiene horas registradas")
+        return
+
+    for proyecto in ProyectoDAO.listar_por_empleado(empleado.id):
+        ProyectoDAO.quitar_empleado(proyecto.id, empleado.id)
+        print(f"Quitado del proyecto '{proyecto.nombre}'")
+
+    quitar_gerencias(empleado.id)
+
+    for usuario in UsuarioDAO.listar_todos():
+        if usuario.id_empleado == empleado.id:
+            usuario.id_empleado = None
+            UsuarioDAO.actualizar(usuario)
+            print(f"El usuario '{usuario.nombre}' quedó sin empleado asociado")
 
     if EmpleadoDAO.eliminar(idEmpleado):
         print("\nEmpleado eliminado correctamente")

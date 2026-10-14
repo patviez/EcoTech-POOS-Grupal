@@ -16,27 +16,33 @@ def crear_tablas():
                 id_departamento INTEGER,
                 nombre TEXT NOT NULL,
                 direccion TEXT NOT NULL,
-                numeracion INTEGER NOT NULL,
                 telefono TEXT NOT NULL,
                 correo TEXT NOT NULL,
                 salario INTEGER NOT NULL,
                 inicioContrato TEXT NOT NULL,
                 FOREIGN KEY (id_departamento) REFERENCES departamento(id)
             )""",
-            """CREATE TABLE IF NOT EXISTS registroTiempo (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_empleado INTEGER,
-                fecha TEXT NOT NULL,
-                horasTrabajadas INTEGER NOT NULL,
-                FOREIGN KEY (id_empleado) REFERENCES empleado(id)
-            )""",
             """CREATE TABLE IF NOT EXISTS proyecto (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_registroTiempo INTEGER,
                 nombre TEXT NOT NULL,
                 descripcion TEXT NOT NULL,
-                fechaInicio TEXT NOT NULL,
-                FOREIGN KEY (id_registroTiempo) REFERENCES registroTiempo(id)
+                fechaInicio TEXT NOT NULL
+            )""",
+            """CREATE TABLE IF NOT EXISTS empleado_proyecto (
+                id_empleado INTEGER NOT NULL,
+                id_proyecto INTEGER NOT NULL,
+                PRIMARY KEY (id_empleado, id_proyecto),
+                FOREIGN KEY (id_empleado) REFERENCES empleado(id),
+                FOREIGN KEY (id_proyecto) REFERENCES proyecto(id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS registroTiempo (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_empleado INTEGER NOT NULL,
+                id_proyecto INTEGER NOT NULL,
+                fecha TEXT NOT NULL,
+                horasTrabajadas REAL NOT NULL,
+                FOREIGN KEY (id_empleado) REFERENCES empleado(id),
+                FOREIGN KEY (id_proyecto) REFERENCES proyecto(id)
             )""",
             """CREATE TABLE IF NOT EXISTS usuario (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,37 +59,40 @@ def crear_tablas():
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 nombre VARCHAR(100) NOT NULL,
                 id_gerente INT
-            )""",
+            ) ENGINE=InnoDB""",
             """CREATE TABLE IF NOT EXISTS empleado (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 id_departamento INT,
                 nombre VARCHAR(100) NOT NULL,
-                direccion VARCHAR(100) NOT NULL,
-                numeracion INT NOT NULL,
+                direccion VARCHAR(150) NOT NULL,
                 telefono VARCHAR(20) NOT NULL,
                 correo VARCHAR(150) NOT NULL,
                 salario INT NOT NULL,
                 inicioContrato VARCHAR(150) NOT NULL,
                 FOREIGN KEY (id_departamento) REFERENCES departamento(id)
-            )""",
-            """ALTER TABLE departamento
-            ADD CONSTRAINT fk_gerente
-            FOREIGN KEY (id_gerente) REFERENCES empleado(id)""",
-            """CREATE TABLE IF NOT EXISTS registroTiempo (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                id_empleado INT,
-                fecha VARCHAR(150) NOT NULL,
-                horasTrabajadas INT NOT NULL,
-                FOREIGN KEY (id_empleado) REFERENCES empleado(id)
-            )""",
+            ) ENGINE=InnoDB""",
             """CREATE TABLE IF NOT EXISTS proyecto (
                 id INT PRIMARY KEY AUTO_INCREMENT,
-                id_registroTiempo INT,
                 nombre VARCHAR(100) NOT NULL,
                 descripcion VARCHAR(300) NOT NULL,
-                fechaInicio VARCHAR(150) NOT NULL,
-                FOREIGN KEY (id_registroTiempo) REFERENCES registroTiempo(id)
-            )""",
+                fechaInicio VARCHAR(150) NOT NULL
+            ) ENGINE=InnoDB""",
+            """CREATE TABLE IF NOT EXISTS empleado_proyecto (
+                id_empleado INT NOT NULL,
+                id_proyecto INT NOT NULL,
+                PRIMARY KEY (id_empleado, id_proyecto),
+                FOREIGN KEY (id_empleado) REFERENCES empleado(id),
+                FOREIGN KEY (id_proyecto) REFERENCES proyecto(id)
+            ) ENGINE=InnoDB""",
+            """CREATE TABLE IF NOT EXISTS registroTiempo (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                id_empleado INT NOT NULL,
+                id_proyecto INT NOT NULL,
+                fecha VARCHAR(150) NOT NULL,
+                horasTrabajadas DECIMAL(4,2) NOT NULL,
+                FOREIGN KEY (id_empleado) REFERENCES empleado(id),
+                FOREIGN KEY (id_proyecto) REFERENCES proyecto(id)
+            ) ENGINE=InnoDB""",
             """CREATE TABLE IF NOT EXISTS usuario (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 id_empleado INT,
@@ -91,11 +100,24 @@ def crear_tablas():
                 contraseña VARCHAR(100) NOT NULL,
                 rol VARCHAR (100) NOT NULL,
                 FOREIGN KEY (id_empleado) REFERENCES empleado(id)
-            )""",
+            ) ENGINE=InnoDB""",
         ]
 
     for sql in sentencias:
         cursor.execute(sql)
+
+    if obtener_motor() != "sqlite":
+        cursor.execute(
+            """SELECT 1 FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'departamento'
+            AND CONSTRAINT_NAME = 'fk_gerente'"""
+        )
+        if cursor.fetchone() is None:
+            cursor.execute(
+                """ALTER TABLE departamento
+                ADD CONSTRAINT fk_gerente
+                FOREIGN KEY (id_gerente) REFERENCES empleado(id)"""
+            )
     conexion.commit()
     conexion.close()
 
