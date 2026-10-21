@@ -103,3 +103,48 @@ Tablas: `departamento`, `empleado`, `proyecto`, `empleado_proyecto` (relación m
 1. `git pull` antes de empezar.
 2. Activar el entorno virtual (`source .venv/Scripts/activate`).
 3. Si se instala una librería nueva, actualizar `requirements.txt` con `pip freeze > requirements.txt`.
+
+#quisiera adaptarlo para obtener la tasa del peso chileno (CLP)# (main_prueba.py)
+
+import math
+import requests
+
+
+def obtener_datos():
+    respuesta = requests.get(
+        "https://open.er-api.com/v6/latest/USD",
+        timeout=(3, 5),
+    )
+    respuesta.raise_for_status()
+    return respuesta.json()
+
+
+def extraer_clp(datos):
+    if not isinstance(datos, dict):
+        raise ValueError("Respuesta inesperada.")
+
+    rates = datos.get("rates")
+    if not isinstance(rates, dict) or "CLP" not in rates:
+        raise ValueError("No se encontró el valor del CLP.")
+
+    valor = rates["CLP"]
+
+    if (
+        type(valor) not in (int, float)
+        or not math.isfinite(valor)
+        or valor <= 0
+    ):
+        raise ValueError("Valor del indicador inválido.")
+
+    # Fecha de la última actualización provista por la API
+    fecha = datos.get("time_last_update_utc", "Fecha no disponible")
+
+    return fecha, valor
+
+
+# Ejecución
+datos = obtener_datos()
+fecha, valor = extraer_clp(datos)
+
+print(f"Fecha: {fecha}")
+print(f"1 USD = {valor} CLP")
