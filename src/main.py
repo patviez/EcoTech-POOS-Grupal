@@ -1,21 +1,28 @@
-import sqlite3
-import pymysql
+from menus.menuUsuario import solicitar_login, menu_privado
 from persistencia.crear_bd import crear_tablas
-from menus.menuPrincipal import menu_principal
+from semilla_bd import sembrar_datos_iniciales
 
-def main():
-    try:
-        crear_tablas()
-    except (sqlite3.Error, pymysql.MySQLError, ValueError) as e:
-        print(f"No fue posible conectarse a la base de datos: {e}")
-        print("Revise la configuración del archivo .env e intente de nuevo.")
-        return
+def main():    
+    crear_tablas()
+    sembrar_datos_iniciales()
 
-    print("Base de datos preparada correctamente.")
-    try:
-        menu_principal()
-    except (KeyboardInterrupt, EOFError):
-        print("\nPrograma cerrado.")
+    while True:
+        print("\n=== INICIO DE SESIÓN ECOTECH ===")
+        usuario_actual = solicitar_login()
+        
+        if usuario_actual is None:
+            if input("Presione Enter para reintentar o '0' para salir: ").strip() == "0":
+                return
+            continue
+            
+        opcion = menu_privado(usuario_actual)
+        usuario_actual = None
+        
+        if opcion == "0":
+            print("Saliendo del programa...")
+            return
+            
+        print("Sesión cerrada. Ingrese nuevamente.")
 
 if __name__ == "__main__":
     main()
