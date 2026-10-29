@@ -9,7 +9,7 @@ def crear_tablas():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nombre TEXT NOT NULL,
                 id_gerente INTEGER,
-                FOREIGN KEY (id_gerente) REFERENCES empleado(id)
+                FOREIGN KEY (id_gerente) REFERENCES empleados(id)
             )""",
             """CREATE TABLE IF NOT EXISTS empleado (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,6 +103,9 @@ def crear_tablas():
             ) ENGINE=InnoDB""",
         ]
 
+    if obtener_motor() != "sqlite":
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+
     for sql in sentencias:
         cursor.execute(sql)
 
@@ -118,6 +121,9 @@ def crear_tablas():
                 ADD CONSTRAINT fk_gerente
                 FOREIGN KEY (id_gerente) REFERENCES empleado(id)"""
             )
+       
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+
     conexion.commit()
     conexion.close()
 

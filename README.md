@@ -29,7 +29,7 @@ La conexión se configura en el archivo `.env` de la raíz del proyecto:
 | `DB_ENGINE` | Motor de base de datos: `sqlite` o `mysql` | `sqlite` |
 | `DB_NAME` | En SQLite, el archivo; en MySQL, el nombre de la base | `ecotech.db` |
 | `DB_HOST` | Servidor MySQL | `localhost` |
-| `DB_PORT` | Puerto MySQL | `3306` |
+| `DB_PORT` | Puerto MySQL | `3308` |
 | `DB_USER` | Usuario MySQL | `root` |
 | `DB_PASSWORD` | Contraseña MySQL | |
 

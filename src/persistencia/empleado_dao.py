@@ -1,6 +1,6 @@
 from dominio.empleado import Empleado
 from persistencia.base_dao import BaseDAO
-
+from persistencia.conexion import abrir_conexion
 
 class EmpleadoDAO(BaseDAO):
     TABLA = "empleado"
@@ -22,12 +22,14 @@ class EmpleadoDAO(BaseDAO):
 
     @classmethod
     def insertar(cls, empleado):
-        sql = (
-            "INSERT INTO empleado "
-            "(nombre, direccion, telefono, correo, salario, inicioContrato, id_departamento) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)"
-        )
-        parametros = (
+        conexion = abrir_conexion()
+    try:
+        with conexion.cursor() as cursor:
+            sql = """
+                INSERT INTO empleado (nombre, correo, direccion, telefono, salario, inicioContrato)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (
             empleado.nombre,
             empleado.direccion,
             empleado.telefono,
@@ -35,12 +37,14 @@ class EmpleadoDAO(BaseDAO):
             empleado.salario,
             empleado.inicioContrato,
             empleado.id_departamento,
-        )
-        nuevo_id = cls._insertar(sql, parametros, "insertar el empleado")
-        if nuevo_id is None:
-            return None
-        empleado.id = nuevo_id
-        return empleado
+        ))
+        conexion.commit()            
+            return cursor.lastrowid
+    except Exception as e:
+        print(f"Error al insertar el empleado: {e}")
+        return None
+    finally:
+        conexion.close()
 
     @classmethod
     def actualizar(cls, empleado):
@@ -69,6 +73,14 @@ class EmpleadoDAO(BaseDAO):
             empleado for empleado in cls.listar_todos()
             if all(palabra in empleado.nombre.casefold().split() for palabra in buscadas)
         ]
+
+    @classmethod
+    def buscar_por_correo(cls, correo):
+        conexion = abrir_conexion()
+        with conexion.cursor() as cursor:
+             sql = "SELECT * FROM empleados WHERE correo = %s"
+             cursor.execute(sql, (correo,))
+             return cursor.fetchone()
 
     @classmethod
     def listar_por_departamento(cls, id_departamento):
